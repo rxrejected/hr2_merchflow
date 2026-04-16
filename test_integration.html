@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HR1-HR2 Integration Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1200px; 
+            margin: 20px auto; 
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .test-section { 
+            background: white; 
+            padding: 20px; 
+            margin: 15px 0; 
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            color: #34495e;
+            margin-top: 0;
+        }
+        .success { 
+            color: #27ae60; 
+            font-weight: bold;
+        }
+        .error { 
+            color: #e74c3c; 
+            font-weight: bold;
+        }
+        .result { 
+            background: #ecf0f1; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-left: 4px solid #3498db;
+            border-radius: 4px; 
+            max-height: 400px; 
+            overflow: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        pre { 
+            white-space: pre-wrap; 
+            word-wrap: break-word;
+            margin: 0;
+        }
+        button { 
+            padding: 12px 24px; 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        button:hover { 
+            background: #2980b9; 
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .info { 
+            background: #e8f4fd; 
+            padding: 15px; 
+            border-left: 4px solid #3498db; 
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info code {
+            background: #d4e9f7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .stat-box {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 5px;
+            font-weight: bold;
+        }
+        .unmatched-list {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .unmatched-item {
+            padding: 5px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .unmatched-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔗 HR1-HR2 Integration Test</h1>
+    
+    <div class="info">
+        <strong>Test Configuration:</strong><br>
+        HR1 API: <code>https://hr1.nextgenmms.com/api/hr2_evaluations_api.php</code><br>
+        HR2 API: <code>https://hr2.nextgenmms.com/api_fetch_employees.php</code><br>
+        API Key: <code>hr2_secure_key_2026_nextgenmms</code>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 1: Fetch All Evaluations from HR1</h2>
+        <button onclick="testHR1List()">Run Test</button>
+        <div id="test1-result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Fetch HR2 Employees (Users)</h2>
+        <button onclick="testHR2Users()">Run Test</button>
+        <div id="test2-result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Match HR1 Evaluations to HR2 Users by Email</h2>
+        <button onclick="testMatching()">Run Test</button>
+        <div id="test3-result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: HR1 API Stats</h2>
+        <button onclick="testHR1Stats()">Run Test</button>
+        <div id="test4-result" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        const HR1_API = 'https://hr1.nextgenmms.com/api/hr2_evaluations_api.php';
+        const API_KEY = 'hr2_secure_key_2026_nextgenmms';
+        const HR2_API = 'https://hr2.nextgenmms.com/api_fetch_employees.php';
+        
+        async function testHR1List() {
+            const resultDiv = document.getElementById('test1-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> Loading...';
+            
+            try {
+                const response = await fetch(`${HR1_API}?action=list&api_key=${API_KEY}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Success! Found ${data.count} evaluations</p>
+                        <div class="stat-box">Total: ${data.count}</div>
+                        <div class="stat-box">Timestamp: ${data.timestamp}</div>
+                        <br><br>
+                        <strong>Sample Data (first 3):</strong>
+                        <pre>${JSON.stringify(data.data.slice(0, 3), null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Connection Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testHR2Users() {
+            const resultDiv = document.getElementById('test2-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> Loading...';
+            
+            try {
+                const response = await fetch(HR2_API);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Success! Found ${data.count} employees</p>
+                        <div class="stat-box">Total: ${data.count}</div>
+                        <div class="stat-box">Timestamp: ${data.timestamp}</div>
+                        <br><br>
+                        <strong>Sample Data (first 3):</strong>
+                        <pre>${JSON.stringify(data.data.slice(0, 3), null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Connection Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testMatching() {
+            const resultDiv = document.getElementById('test3-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> Loading both systems...';
+            
+            try {
+                // Fetch both systems
+                const hr1Response = await fetch(`${HR1_API}?action=list&api_key=${API_KEY}`);
+                const hr1Data = await hr1Response.json();
+                
+                const hr2Response = await fetch(HR2_API);
+                const hr2Data = await hr2Response.json();
+                
+                if (hr1Data.success && hr2Data.success) {
+                    const evaluations = hr1Data.data;
+                    const employees = hr2Data.data;
+                    
+                    // Create email map
+                    const hr2EmailMap = {};
+                    employees.forEach(emp => {
+                        if (emp.email) {
+                            hr2EmailMap[emp.email.toLowerCase()] = emp;
+                        }
+                    });
+                    
+                    // Match evaluations
+                    let matched = 0;
+                    let unmatched = [];
+                    
+                    evaluations.forEach(eval => {
+                        const email = (eval.employee_email || '').toLowerCase();
+                        if (email && hr2EmailMap[email]) {
+                            matched++;
+                        } else {
+                            unmatched.push({
+                                hr1_name: eval.employee_name,
+                                hr1_email: eval.employee_email,
+                                score: eval.overall_score,
+                                period: eval.period
+                            });
+                        }
+                    });
+                    
+                    let unmatchedHTML = '';
+                    if (unmatched.length > 0) {
+                        unmatchedHTML = `
+                            <div class="unmatched-list">
+                                <strong>⚠️ Unmatched Evaluations (${unmatched.length}):</strong>
+                                ${unmatched.slice(0, 10).map(u => `
+                                    <div class="unmatched-item">
+                                        <strong>${u.hr1_name}</strong> (${u.hr1_email || 'No email'})<br>
+                                        Score: ${u.score}% | Period: ${u.period}
+                                    </div>
+                                `).join('')}
+                                ${unmatched.length > 10 ? `<p><em>... and ${unmatched.length - 10} more</em></p>` : ''}
+                            </div>
+                        `;
+                    }
+                    
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Matching Complete!</p>
+                        <div class="stat-box">HR1 Evaluations: ${evaluations.length}</div>
+                        <div class="stat-box">HR2 Employees: ${employees.length}</div>
+                        <div class="stat-box">Matched: ${matched}</div>
+                        <div class="stat-box">Unmatched: ${unmatched.length}</div>
+                        <br><br>
+                        ${unmatchedHTML}
+                        <br>
+                        <strong>Match Rate:</strong> ${((matched / evaluations.length) * 100).toFixed(1)}%
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Error fetching data</p>
+                        <p>HR1: ${hr1Data.success ? 'OK' : hr1Data.error}</p>
+                        <p>HR2: ${hr2Data.success ? 'OK' : hr2Data.error}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testHR1Stats() {
+            const resultDiv = document.getElementById('test4-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> Loading...';
+            
+            try {
+                const response = await fetch(`${HR1_API}?action=stats&api_key=${API_KEY}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Success!</p>
+                        <div class="stat-box">Total: ${data.data.total}</div>
+                        <div class="stat-box">Completed: ${data.data.completed}</div>
+                        <div class="stat-box">Avg Score: ${parseFloat(data.data.avg_score).toFixed(2)}%</div>
+                        <br><br>
+                        <strong>Full Response:</strong>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Connection Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
